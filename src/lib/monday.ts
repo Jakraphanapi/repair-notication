@@ -46,6 +46,17 @@ export class MondayService {
     }
   }
 
+  static parseWebhookPayload(payload: any) {
+    return {
+      itemId: payload.event?.pulseId,
+      boardId: payload.event?.boardId,
+      columnId: payload.event?.columnId,
+      previousValue: payload.event?.previousValue,
+      value: payload.event?.value,
+      eventType: payload.event?.type,
+    };
+  }
+
   private static mapStatusToMonday(status: string): string {
     const statusMap: Record<string, string> = {
       PENDING: "รอดำเนินการ",
@@ -86,3 +97,5 @@ export class MondayService {
     }
   }
 }
+
+export const mondayService = MondayService;

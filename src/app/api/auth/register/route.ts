@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { email, password, name, phone, lineUserId } = await request.json();
 
     // Validation
-    if (!email || !password || !name) {
+    if (!email || !password || !name || !phone) {
       return NextResponse.json(
         { error: "กรุณากรอกข้อมูลที่จำเป็น" },
         { status: 400 }

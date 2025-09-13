@@ -145,7 +145,7 @@ export default function RegisterPage() {
                 htmlFor="phone"
                 className="block text-sm font-medium text-gray-700"
               >
-                เบอร์โทรศัพท์ (ไม่บังคับ)
+                เบอร์โทรศัพท์
               </label>
               <input
                 id="phone"

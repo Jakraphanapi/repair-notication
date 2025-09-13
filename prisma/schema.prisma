@@ -9,10 +9,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
+// NextAuth.js models
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -40,6 +41,15 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Core business models
 model User {
   id            String         @id @default(cuid())
   name          String?
@@ -56,14 +66,6 @@ model User {
   sessions      Session[]
   repairTickets RepairTicket[]
   comments      Comment[]
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
 }
 
 model Company {
@@ -158,6 +160,7 @@ model NotificationLog {
   createdAt DateTime         @default(now())
 }
 
+// Enums
 enum UserRole {
   USER
   ADMIN
