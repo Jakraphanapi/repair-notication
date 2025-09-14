@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLiff } from "@/hooks/useLiff";
 import toast from "react-hot-toast";
 
@@ -20,6 +20,48 @@ export default function LinkLineUidPage() {
     error: liffError,
     loginToLine,
   } = useLiff();
+
+  const handleLinkLineUid = useCallback(async () => {
+    try {
+      setIsLinking(true);
+
+      if (!lineUid || !lineProfile) {
+        toast.error("ไม่สามารถดึงข้อมูล LINE ได้");
+        return;
+      }
+
+      const response = await fetch("/api/user/link-line", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lineUid,
+          displayName: lineProfile.displayName,
+          pictureUrl: lineProfile.pictureUrl,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success("เชื่อมต่อ LINE UID สำเร็จ!");
+        setIsLinked(true);
+
+        // Update session
+        await update({
+          lineUserId: lineUid,
+        });
+      } else {
+        toast.error(result.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      }
+    } catch (error) {
+      console.error("Error linking LINE UID:", error);
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ LINE");
+    } finally {
+      setIsLinking(false);
+    }
+  }, [lineUid, lineProfile, update]);
 
   useEffect(() => {
     // Check if user already has LINE UID linked
@@ -53,53 +95,8 @@ export default function LinkLineUidPage() {
     session,
     isLinked,
     isLinking,
+    handleLinkLineUid,
   ]);
-
-  const handleLinkLineUid = async () => {
-    try {
-      setIsLinking(true);
-
-      if (!lineUid || !lineProfile) {
-        toast.error("ไม่สามารถดึงข้อมูล LINE ได้");
-        return;
-      }
-
-      const response = await fetch("/api/user/link-line", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lineUid,
-          displayName: lineProfile.displayName,
-          pictureUrl: lineProfile.pictureUrl,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success("เชื่อมต่อ LINE UID สำเร็จ!");
-        setIsLinked(true);
-
-        // Update session
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            lineUserId: lineUid,
-          },
-        });
-      } else {
-        toast.error(result.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ LINE");
-      }
-    } catch (error) {
-      console.error("Error linking LINE UID:", error);
-      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ LINE");
-    } finally {
-      setIsLinking(false);
-    }
-  };
 
   const handleLoginToLine = () => {
     if (!isLiffReady) {

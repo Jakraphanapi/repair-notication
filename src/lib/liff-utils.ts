@@ -188,7 +188,7 @@ export const sendMessage = (message: string): Promise<void> => {
     ]);
   } catch (error) {
     console.error("Error sending message:", error);
-    return Promise.reject(error);
+    return Promise.reject(new Error(`Failed to send message: ${error}`));
   }
 };
 
