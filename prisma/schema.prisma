@@ -9,8 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // NextAuth.js models
@@ -20,12 +20,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -59,6 +59,7 @@ model User {
   password      String?
   phone         String?
   lineUserId    String?        @unique
+  googleId      String?        @unique  // Google User ID
   role          UserRole       @default(USER)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -114,7 +115,7 @@ model RepairTicket {
   id              String              @id @default(cuid())
   ticketNumber    String              @unique
   title           String
-  description     String              @db.Text
+  description     String
   images          String[]            @default([])
   status          RepairTicketStatus  @default(PENDING)
   priority        Priority            @default(MEDIUM)
@@ -131,7 +132,7 @@ model RepairTicket {
 
 model Comment {
   id              String       @id @default(cuid())
-  content         String       @db.Text
+  content         String
   userId          String
   repairTicketId  String
   createdAt       DateTime     @default(now())
@@ -145,7 +146,7 @@ model RepairStatusHistory {
   repairTicketId  String
   fromStatus      RepairTicketStatus?
   toStatus        RepairTicketStatus
-  note            String?            @db.Text
+  note            String?
   createdAt       DateTime           @default(now())
   repairTicket    RepairTicket       @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
 }
@@ -154,9 +155,9 @@ model NotificationLog {
   id        String           @id @default(cuid())
   type      NotificationType
   recipient String
-  message   String           @db.Text
+  message   String
   success   Boolean          @default(false)
-  error     String?          @db.Text
+  error     String?
   createdAt DateTime         @default(now())
 }
 
