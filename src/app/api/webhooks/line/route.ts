@@ -112,7 +112,7 @@ async function sendRepairFormLink(lineUserId: string) {
     }
 
     // ส่งลิงก์ LIFF App สำหรับแจ้งซ่อม
-    const liffUrl = `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}`;
+    const liffUrl = `https://liff.line.me/${process.env.NEXT_PUBLIC_LINE_LIFF_ID}`;
 
     const repairMessage = `🔧 ฟอร์มแจ้งซ่อมออนไลน์
 
