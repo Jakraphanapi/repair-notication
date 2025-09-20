@@ -1,12 +1,17 @@
 import { Client, MessageAPIResponseBase } from "@line/bot-sdk";
 import axios from "axios";
+// This directive ensures these modules are only imported and executed on the server
+import "server-only";
 
-const config = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || "",
-  channelSecret: process.env.LINE_CHANNEL_SECRET || "",
+// Configure the LINE client only when needed at runtime
+const getClient = () => {
+  const config = {
+    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || "",
+    channelSecret: process.env.LINE_CHANNEL_SECRET || "",
+  };
+
+  return new Client(config);
 };
-
-const client = new Client(config);
 
 export interface RichMenuData {
   size: {
@@ -36,6 +41,7 @@ export class LineService {
     userId: string,
     message: string
   ): Promise<MessageAPIResponseBase> {
+    const client = getClient();
     return client.pushMessage(userId, {
       type: "text",
       text: message,
@@ -46,6 +52,7 @@ export class LineService {
     groupId: string,
     message: string
   ): Promise<MessageAPIResponseBase> {
+    const client = getClient();
     return client.pushMessage(groupId, {
       type: "text",
       text: message,
@@ -56,6 +63,7 @@ export class LineService {
     groupId: string,
     ticketData: any
   ): Promise<MessageAPIResponseBase> {
+    const client = getClient();
     // Simplified message for now
     const message = {
       type: "text" as const,
@@ -161,6 +169,7 @@ export class LineService {
 
   static async getUserProfile(userId: string) {
     try {
+      const client = getClient();
       return await client.getProfile(userId);
     } catch (error) {
       console.error("Error getting LINE user profile:", error);
@@ -169,4 +178,5 @@ export class LineService {
   }
 }
 
-export default client;
+// Export a function to get a client instance instead of exporting the client directly
+export const getLineClient = getClient;
