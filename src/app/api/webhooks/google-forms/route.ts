@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendRepairTicketNotification } from "@/lib/line-notifications";
+import { MondayService } from "@/lib/monday";
 
 interface GoogleFormData {
   timestamp: string;
@@ -176,17 +177,25 @@ export async function POST(request: NextRequest) {
       console.error("LINE notification error:", lineError);
     }
 
-    // Create Monday.com ticket (placeholder for future implementation)
+    // Create Monday.com ticket
     try {
-      console.log("Monday.com ticket creation will be implemented later");
-      console.log("Ticket data:", {
-        title: repairTicket.title,
-        description: repairTicket.description,
-        priority: repairTicket.priority,
-        userEmail: repairTicket.user.email,
-        userName: repairTicket.user.name || "",
-        ticketNumber: repairTicket.ticketNumber,
-      });
+      const mondayTicketId = await MondayService.createTicket(repairTicket);
+
+      if (mondayTicketId) {
+        // Update repair ticket with Monday ticket ID
+        await prisma.repairTicket.update({
+          where: { id: repairTicket.id },
+          data: { mondayTicketId },
+        });
+
+        console.log(
+          `Created Monday.com ticket ${mondayTicketId} for repair ticket ${repairTicket.ticketNumber}`
+        );
+      } else {
+        console.log(
+          `Failed to create Monday.com ticket for repair ticket ${repairTicket.ticketNumber}`
+        );
+      }
     } catch (mondayError) {
       console.error("Monday.com ticket creation error:", mondayError);
     }

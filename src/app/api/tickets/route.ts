@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateTicketNumber } from "@/lib/utils";
+import { MondayService } from "@/lib/monday";
 
 export async function GET(request: NextRequest) {
   try {
@@ -175,6 +176,25 @@ export async function POST(request: NextRequest) {
         note: "สร้างการแจ้งซ่อมใหม่",
       },
     });
+
+    // Create Monday.com ticket
+    try {
+      const mondayTicketId = await MondayService.createTicket(repairTicket);
+
+      if (mondayTicketId) {
+        // Update repair ticket with Monday ticket ID
+        await prisma.repairTicket.update({
+          where: { id: repairTicket.id },
+          data: { mondayTicketId },
+        });
+
+        console.log(
+          `Created Monday.com ticket ${mondayTicketId} for repair ticket ${repairTicket.ticketNumber}`
+        );
+      }
+    } catch (mondayError) {
+      console.error("Error creating Monday.com ticket:", mondayError);
+    }
 
     return NextResponse.json(repairTicket);
   } catch (error) {
