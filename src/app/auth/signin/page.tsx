@@ -1,14 +1,12 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useLiff } from "@/hooks/useLiff";
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const {
     isLiffReady,
@@ -24,21 +22,12 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const result = await signIn("google", {
-        callbackUrl: "/auth/link-line", // Redirect to LINE linking page
-        redirect: false,
+      await signIn("google", {
+        callbackUrl: "/repair/new", // Redirect to repair form after successful login
       });
-
-      if (result?.error) {
-        toast.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
-      } else if (result?.url) {
-        toast.success("เข้าสู่ระบบสำเร็จ");
-        router.push(result.url);
-      }
     } catch (error) {
       toast.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
       console.error("Sign in error:", error);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -51,24 +40,8 @@ export default function SignInPage() {
       }
 
       if (isLineLoggedIn && lineUid && lineProfile) {
-        // Already logged in, create session
-        setIsLoading(true);
-
-        const result = await signIn("credentials", {
-          lineUid,
-          displayName: lineProfile.displayName,
-          email: lineProfile.email || "",
-          pictureUrl: lineProfile.pictureUrl || "",
-          redirect: false,
-        });
-
-        if (result?.error) {
-          toast.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย LINE");
-        } else if (result?.url) {
-          toast.success("เข้าสู่ระบบด้วย LINE สำเร็จ");
-          router.push(result.url);
-        }
-        setIsLoading(false);
+        // Redirect to LINE page for authentication flow
+        window.location.href = "/line";
       } else {
         // Need to login to LINE first
         loginToLine();
