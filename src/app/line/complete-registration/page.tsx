@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
+import { openUrl } from "@/lib/liff-utils";
 
 function CompleteRegistrationContent() {
   const { data: session, update } = useSession();
@@ -68,10 +69,10 @@ function CompleteRegistrationContent() {
               );
               prefilledUrl.searchParams.set("entry.lineUid", lineUid);
 
-              window.location.href = prefilledUrl.toString();
+              openUrl(prefilledUrl.toString());
             } else {
               // Fallback to repair form page
-              router.push("/repair/new");
+              openUrl(`${window.location.origin}/repair/new`);
             }
           }, 3000);
         } else {

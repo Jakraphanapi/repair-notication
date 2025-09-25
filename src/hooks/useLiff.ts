@@ -20,7 +20,7 @@ interface UseLiffReturn {
   lineUid: string | null;
   loading: boolean;
   error: string | null;
-  loginToLine: () => void;
+  loginToLine: (redirectUri?: string) => void;
   logoutFromLine: () => void;
   refreshProfile: () => Promise<void>;
 }
@@ -86,9 +86,9 @@ export const useLiff = (): UseLiffReturn => {
     initializeLiff();
   }, [initializeLiff]);
 
-  const loginToLine = useCallback(() => {
+  const loginToLine = useCallback((redirectUri?: string) => {
     try {
-      login();
+      login(redirectUri);
     } catch (err) {
       console.error("LINE login error:", err);
       setError("LINE login failed");

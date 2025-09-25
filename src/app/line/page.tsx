@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
+import { openUrl } from "@/lib/liff-utils";
 import { useLiff } from "@/hooks/useLiff";
 import toast from "react-hot-toast";
 
@@ -52,7 +53,7 @@ export default function LineEntryPage() {
                 );
                 prefilledUrl.searchParams.set("entry.lineUid", lineUid);
 
-                window.location.href = prefilledUrl.toString();
+                openUrl(prefilledUrl.toString());
               } else {
                 toast.error("Google Form URL ไม่ได้ตั้งค่า");
               }
@@ -82,15 +83,20 @@ export default function LineEntryPage() {
 
     setIsLoading(true);
     try {
-      // Sign in with Google first, then link LINE UID
-      const result = await signIn("google", {
-        callbackUrl: `/line/complete-registration?lineUid=${lineUid}&displayName=${encodeURIComponent(
-          lineProfile.displayName
-        )}&pictureUrl=${encodeURIComponent(lineProfile.pictureUrl || "")}`,
+      // Register/sign in directly with LINE credentials via NextAuth
+      const result = await signIn("line", {
+        lineUid,
+        displayName: lineProfile.displayName,
+        email: lineProfile.email || `line_${lineUid}@example.com`,
+        pictureUrl: lineProfile.pictureUrl || "",
         redirect: true,
+        callbackUrl: "/line/complete-registration?lineUid=" +
+          encodeURIComponent(lineUid) +
+          "&displayName=" + encodeURIComponent(lineProfile.displayName) +
+          "&pictureUrl=" + encodeURIComponent(lineProfile.pictureUrl || ""),
       });
 
-      if (result?.error) {
+      if ((result as any)?.error) {
         toast.error("เกิดข้อผิดพลาดในการลงทะเบียน");
       }
     } catch (error) {
@@ -106,7 +112,8 @@ export default function LineEntryPage() {
       toast.error("LIFF ยังไม่พร้อมใช้งาน กรุณารอสักครู่");
       return;
     }
-    loginToLine();
+    const redirectUri = `${window.location.origin}/line`;
+    loginToLine(redirectUri);
   };
 
   // Show loading while LIFF is initializing

@@ -47,11 +47,19 @@ export default function SignInPage() {
       }
 
       if (isLineLoggedIn && lineUid && lineProfile) {
-        // Redirect to LINE page for authentication flow
-        window.location.href = "/line";
+        // Sign in via NextAuth LINE credentials; stay in LIFF and return to /line
+        await signIn("line", {
+          lineUid,
+          displayName: lineProfile.displayName,
+          email: lineProfile.email || `line_${lineUid}@example.com`,
+          pictureUrl: lineProfile.pictureUrl || "",
+          redirect: true,
+          callbackUrl: "/line",
+        });
       } else {
-        // Need to login to LINE first
-        loginToLine();
+        // Need to login to LINE first, ensure redirect returns to /line to avoid loops
+        const redirectUri = `${window.location.origin}/line`;
+        loginToLine(redirectUri);
       }
     } catch (error) {
       toast.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย LINE");

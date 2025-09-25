@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import { useLiff } from "@/hooks/useLiff";
 import toast from "react-hot-toast";
+import { openUrl } from "@/lib/liff-utils";
 
 export default function LinkLineUidPage() {
   const { data: session, update } = useSession();
@@ -183,7 +184,7 @@ export default function LinkLineUidPage() {
                   ระบบจะส่งการแจ้งเตือนไปยัง LINE ของคุณ
                 </p>
                 <button
-                  onClick={() => (window.location.href = "/")}
+                  onClick={() => openUrl(`${window.location.origin}/`)}
                   className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   ไปหน้าหลัก
@@ -248,7 +249,7 @@ export default function LinkLineUidPage() {
 
                 <div className="text-center">
                   <button
-                    onClick={() => (window.location.href = "/")}
+                    onClick={() => openUrl(`${window.location.origin}/`)}
                     className="text-sm text-gray-500 hover:text-gray-700 underline"
                   >
                     ข้ามขั้นตอนนี้ (สามารถเชื่อมต่อทีหลังได้)

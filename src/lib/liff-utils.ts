@@ -44,10 +44,15 @@ export const isLoggedIn = (): boolean => {
 
 /**
  * Login to LINE
+ * @param redirectUri Optional URL to return to after LINE login
  */
-export const login = (): void => {
+export const login = (redirectUri?: string): void => {
   try {
-    liff.login();
+    if (redirectUri) {
+      liff.login({ redirectUri });
+    } else {
+      liff.login();
+    }
   } catch (error) {
     console.error("LINE login error:", error);
   }
@@ -202,5 +207,26 @@ export const getCurrentLineUid = async (): Promise<string | null> => {
   } catch (error) {
     console.error("Error getting current LINE UID:", error);
     return null;
+  }
+};
+
+/**
+ * Open URL while staying inside LIFF if possible
+ */
+export const openUrl = (url: string): void => {
+  try {
+    if (isInClient()) {
+      // Keep navigation inside LIFF webview
+      liff.openWindow({ url, external: false });
+    } else {
+      // Fallback for normal browsers
+      window.location.href = url;
+    }
+  } catch (error) {
+    console.error("Error opening URL:", error);
+    // Best-effort fallback
+    try {
+      window.location.href = url;
+    } catch { }
   }
 };
