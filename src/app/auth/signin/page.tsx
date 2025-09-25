@@ -26,7 +26,7 @@ export default function SignInPage() {
         callbackUrl: "/repair/new",
         redirect: true,
       });
-      
+
       if (result?.error) {
         console.error("Google sign-in error:", result.error);
         toast.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
