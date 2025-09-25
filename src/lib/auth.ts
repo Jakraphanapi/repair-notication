@@ -76,16 +76,12 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      console.log("SignIn callback:", { user: user?.email, provider: account?.provider });
-      
       if (account?.provider === "google") {
         try {
           // Check if user exists in database
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! },
           });
-
-          console.log("Existing user found:", !!existingUser);
 
           if (!existingUser) {
             // Create new user if doesn't exist
@@ -151,7 +147,8 @@ export const authOptions: NextAuthOptions = {
           return true;
         } catch (error) {
           console.error("Error during Google sign in:", error);
-          return false;
+          // Still allow sign in even if database operations fail
+          return true;
         }
       }
 
@@ -214,10 +211,16 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
   pages: {
     signIn: "/auth/signin",
-    error: "/auth/signin",
   },
   debug: process.env.NODE_ENV === "development",
 };

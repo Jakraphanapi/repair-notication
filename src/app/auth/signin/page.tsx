@@ -22,23 +22,14 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      console.log("Starting Google sign in...");
       const result = await signIn("google", {
         callbackUrl: "/repair/new",
-        redirect: false,
+        redirect: true,
       });
       
-      console.log("Sign in result:", result);
-      
       if (result?.error) {
-        console.error("Sign in error:", result.error);
-        toast.error(`เกิดข้อผิดพลาด: ${result.error}`);
-        setIsLoading(false);
-      } else if (result?.url) {
-        console.log("Redirecting to:", result.url);
-        window.location.href = result.url;
-      } else {
-        console.log("No URL returned, staying on page");
+        console.error("Google sign-in error:", result.error);
+        toast.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
         setIsLoading(false);
       }
     } catch (error) {
