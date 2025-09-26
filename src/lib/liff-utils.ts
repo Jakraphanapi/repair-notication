@@ -12,6 +12,24 @@ export interface LiffProfile extends LineProfile {
 }
 
 /**
+ * Check network connectivity to LINE servers
+ */
+export const checkLineConnectivity = async (): Promise<boolean> => {
+  try {
+    // ตรวจสอบการเชื่อมต่อกับ LINE servers
+    await fetch('https://access.line.me/.well-known/openid_configuration', {
+      method: 'HEAD',
+      mode: 'no-cors',
+      cache: 'no-cache'
+    });
+    return true;
+  } catch (error) {
+    console.error("Cannot connect to LINE servers:", error);
+    return false;
+  }
+};
+
+/**
  * Initialize LIFF
  */
 export const initLiff = async (): Promise<boolean> => {
@@ -22,10 +40,55 @@ export const initLiff = async (): Promise<boolean> => {
       return false;
     }
 
-    await liff.init({ liffId });
+    console.log("Initializing LIFF with ID:", liffId);
+
+    // เพิ่มการตั้งค่าเพิ่มเติมสำหรับ LIFF
+    const initOptions = {
+      liffId,
+      // เพิ่ม redirectUri เพื่อให้ LIFF รู้ว่าจะ redirect ไปที่ไหน
+      redirectUri: typeof window !== 'undefined' ? window.location.origin + '/line' : undefined,
+    };
+
+    const initPromise = liff.init(initOptions);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('LIFF init timeout')), 15000) // เพิ่มเป็น 15 วินาที
+    );
+
+    await Promise.race([initPromise, timeoutPromise]);
+
+    console.log("LIFF initialized successfully");
     return true;
   } catch (error) {
     console.error("LIFF initialization failed:", error);
+
+    // จัดการ error แบบเฉพาะเจาะจง
+    if (error instanceof Error) {
+      if (error.message.includes('access.line.me')) {
+        console.error("Cannot access LINE authentication server");
+        return false;
+      }
+
+      if (error.message === 'LIFF init timeout') {
+        console.log("Retrying LIFF initialization...");
+        await new Promise(resolve => setTimeout(resolve, 3000)); // เพิ่มเป็น 3 วินาที
+        try {
+          const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID;
+          if (!liffId) return false;
+
+          const retryOptions = {
+            liffId,
+            redirectUri: typeof window !== 'undefined' ? window.location.origin + '/line' : undefined,
+          };
+
+          await liff.init(retryOptions);
+          console.log("LIFF initialized on retry");
+          return true;
+        } catch (retryError) {
+          console.error("LIFF retry failed:", retryError);
+        }
+      }
+    }
+
     return false;
   }
 };

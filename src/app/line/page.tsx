@@ -176,12 +176,20 @@ export default function LineEntryPage() {
             เกิดข้อผิดพลาด
           </h2>
           <p className="text-red-700 mb-4">{liffError}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
-            ลองใหม่
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              ลองใหม่
+            </button>
+            <button
+              onClick={() => window.location.href = '/auth/signin'}
+              className="w-full px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              กลับไปหน้าเข้าสู่ระบบ
+            </button>
+          </div>
         </div>
       </div>
     );

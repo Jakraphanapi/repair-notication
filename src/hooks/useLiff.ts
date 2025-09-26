@@ -9,6 +9,7 @@ import {
   getLiffProfile,
   getCurrentLineUid,
   isInClient,
+  checkLineConnectivity,
   type LiffProfile,
 } from "@/lib/liff-utils";
 
@@ -60,9 +61,33 @@ export const useLiff = (): UseLiffReturn => {
       setLoading(true);
       setError(null);
 
-      const initialized = await initLiff();
+      // ตรวจสอบการเชื่อมต่อกับ LINE servers ก่อน
+      console.log("Checking LINE server connectivity...");
+      const canConnect = await checkLineConnectivity();
+      if (!canConnect) {
+        setError("ไม่สามารถเชื่อมต่อกับ LINE servers ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+        return;
+      }
+
+      // ลอง init LIFF หลายครั้งถ้าจำเป็น
+      let initialized = false;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (!initialized && attempts < maxAttempts) {
+        attempts++;
+        console.log(`LIFF initialization attempt ${attempts}/${maxAttempts}`);
+
+        initialized = await initLiff();
+
+        if (!initialized && attempts < maxAttempts) {
+          console.log(`Waiting before retry... (${attempts}/${maxAttempts})`);
+          await new Promise(resolve => setTimeout(resolve, 3000)); // เพิ่มเป็น 3 วินาที
+        }
+      }
+
       if (!initialized) {
-        setError("Failed to initialize LIFF");
+        setError("ไม่สามารถเชื่อมต่อกับ LINE ได้ กรุณาลองใหม่หรือตรวจสอบการตั้งค่า LIFF");
         return;
       }
 
@@ -76,7 +101,7 @@ export const useLiff = (): UseLiffReturn => {
       }
     } catch (err) {
       console.error("LIFF initialization error:", err);
-      setError("LIFF initialization failed");
+      setError("เกิดข้อผิดพลาดในการเชื่อมต่อ LINE");
     } finally {
       setLoading(false);
     }
