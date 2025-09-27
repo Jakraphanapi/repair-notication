@@ -19,23 +19,25 @@ export class MondayService {
 
       // Prepare ticket data
       const ticketName = `${repairTicket.ticketNumber} - ${repairTicket.title}`;
-      const deviceInfo = repairTicket.device
-        ? `${repairTicket.device.model.brand.company.name} ${repairTicket.device.model.brand.name} ${repairTicket.device.model.name}`
-        : "ไม่ระบุ";
 
-      const userInfo = repairTicket.user
-        ? `${repairTicket.user.name || ""} (${repairTicket.user.email})`
-        : repairTicket.userEmail || "";
+      // Extract device info from description (from Google Forms)
+      const deviceInfo = repairTicket.description.includes('อุปกรณ์:')
+        ? repairTicket.description.split('อุปกรณ์:')[1]?.split('\n')[0]?.trim() || "ไม่ระบุ"
+        : "ไม่ระบุ";
 
       // Prepare column values
       const columnValues = {
-        status: { label: this.mapStatusToMonday(repairTicket.status) },
-        priority: { label: this.mapPriorityToMonday(repairTicket.priority) },
-        text: repairTicket.description,
-        device: deviceInfo,
-        email: repairTicket.user?.email || repairTicket.userEmail || "",
-        user: userInfo,
-        ticket_number: repairTicket.ticketNumber,
+        "Project": deviceInfo, // ข้อมูลเครื่องจาก Google Forms
+        "บุคคลติดต่อ": repairTicket.user?.name || "",
+        "บริษัท/หน่วยงาน": repairTicket.user?.email || repairTicket.userEmail || "",
+        "เบอร์โทรศัพท์": "",
+        "แผนก/สาขา": "",
+        "ยี่ห้อ": repairTicket.device?.model?.brand?.name || "ไม่ระบุ",
+        "รุ่น": repairTicket.device?.model?.name || "ไม่ระบุ",
+        "S/N": repairTicket.device?.serialNumber || "ไม่ระบุ",
+        "สถานะงาน": { label: this.mapStatusToMonday(repairTicket.status) },
+        "ปฏิบัติงาน / อาการ": repairTicket.description,
+        "ติดต่อชื่อ เบอร์": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`,
       };
 
       // Convert column values to JSON string
