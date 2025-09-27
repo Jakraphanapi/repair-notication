@@ -165,13 +165,13 @@ export class MondayService {
 
   private static mapStatusToMonday(status: string): string {
     const statusMap: Record<string, string> = {
-      PENDING: "รอดำเนินการ",
-      IN_PROGRESS: "กำลังดำเนินการ",
-      WAITING_PARTS: "รออะไหล่",
-      COMPLETED: "เสร็จสิ้น",
-      CANCELLED: "ยกเลิก",
+      PENDING: "งานเข้าใหม่",
+      IN_PROGRESS: "กำลังทำงาน",
+      WAITING_PARTS: "รอใบสั่งซื้อ",
+      COMPLETED: "เสร็จเรียบร้อย",
+      CANCELLED: "ยกเลิกการซ่อม",
     };
-    return statusMap[status] || "รอดำเนินการ";
+    return statusMap[status] || "งานเข้าใหม่";
   }
 
   private static mapPriorityToMonday(priority: string): string {
@@ -186,11 +186,14 @@ export class MondayService {
 
   static mapMondayStatusToPrisma(mondayStatus: string): string {
     const statusMap: Record<string, string> = {
-      รอดำเนินการ: "PENDING",
-      กำลังดำเนินการ: "IN_PROGRESS",
-      รออะไหล่: "WAITING_PARTS",
-      เสร็จสิ้น: "COMPLETED",
-      ยกเลิก: "CANCELLED",
+      งานเข้าใหม่: "PENDING",
+      กำลังทำงาน: "IN_PROGRESS",
+      รอใบสั่งซื้อ: "WAITING_PARTS",
+      เสร็จเรียบร้อย: "COMPLETED",
+      ยกเลิกการซ่อม: "CANCELLED",
+      นัดวันเข้างานแล้ว: "PENDING",
+      งานค้าง: "IN_PROGRESS",
+      ล่าช้า: "IN_PROGRESS",
     };
     return statusMap[mondayStatus] || "PENDING";
   }
