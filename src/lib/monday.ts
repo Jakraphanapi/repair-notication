@@ -30,14 +30,11 @@ export class MondayService {
         "Project": deviceInfo, // ข้อมูลเครื่องจาก Google Forms
         "บุคคลติดต่อ": repairTicket.user?.name || "",
         "บริษัท/หน่วยงาน": repairTicket.user?.email || repairTicket.userEmail || "",
-        "เบอร์โทรศัพท์": "",
-        "แผนก/สาขา": "",
+        "เบอร์โทรศัพท์": repairTicket.user?.phone || "",
+        "แผนก/สาขา": repairTicket.user?.department || "",
         "ยี่ห้อ": repairTicket.device?.model?.brand?.name || "ไม่ระบุ",
         "รุ่น": repairTicket.device?.model?.name || "ไม่ระบุ",
         "S/N": repairTicket.device?.serialNumber || "ไม่ระบุ",
-        "สถานะงาน": { label: this.mapStatusToMonday(repairTicket.status) },
-        "ปฏิบัติงาน / อาการ": repairTicket.description,
-        "ติดต่อชื่อ เบอร์": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`,
       };
 
       // Convert column values to JSON string
@@ -51,6 +48,12 @@ export class MondayService {
       }`;
 
       // Make API call to Monday.com
+      console.log("Sending to Monday.com:", {
+        boardId: this.boardId,
+        itemName: ticketName,
+        columnValues: columnValuesJson,
+      });
+
       const response = await axios.post(
         this.apiUrl,
         {
@@ -68,6 +71,8 @@ export class MondayService {
           },
         }
       );
+
+      console.log("Monday.com API response:", response.data);
 
       // Extract item ID from response
       const itemId = response.data?.data?.create_item?.id;
