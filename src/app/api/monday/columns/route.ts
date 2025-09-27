@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { MondayService } from "@/lib/monday";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const columns = await MondayService.getBoardColumns();
 
