@@ -205,6 +205,50 @@ export class MondayService {
     return statusMap[mondayStatus] || "PENDING";
   }
 
+  static async getBoardColumns(): Promise<any> {
+    try {
+      if (!this.apiToken || !this.boardId) {
+        console.error("Monday.com API token or board ID not configured");
+        return null;
+      }
+
+      const query = `query ($boardId: ID!) {
+        boards(ids: [$boardId]) {
+          id
+          name
+          columns {
+            id
+            title
+            type
+            settings_str
+          }
+        }
+      }`;
+
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          query,
+          variables: {
+            boardId: this.boardId,
+          },
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: this.apiToken,
+          },
+        }
+      );
+
+      console.log("Monday.com board columns:", JSON.stringify(response.data, null, 2));
+      return response.data;
+    } catch (error) {
+      console.error("Error getting Monday.com board columns:", error);
+      return null;
+    }
+  }
+
   static async handleWebhook(payload: any): Promise<void> {
     try {
       console.log("Monday.com webhook received:", payload);
