@@ -16,7 +16,7 @@ export class MondayService {
         console.error("Monday.com API token or board ID not configured");
         return null;
       }
-
+      console.log("Creating ticket for repair ticket:", repairTicket);
       // Prepare ticket data
       const ticketName = `${repairTicket.ticketNumber} - ${repairTicket.title}`;
 
