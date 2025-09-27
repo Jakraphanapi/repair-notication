@@ -25,16 +25,19 @@ export class MondayService {
         ? repairTicket.description.split('อุปกรณ์:')[1]?.split('\n')[0]?.trim() || "ไม่ระบุ"
         : "ไม่ระบุ";
 
-      // Prepare column values
+      // Prepare column values using actual Monday.com column IDs
       const columnValues = {
-        "Project": deviceInfo, // ข้อมูลเครื่องจาก Google Forms
-        "บุคคลติดต่อ": repairTicket.user?.name || "",
-        "บริษัท/หน่วยงาน": repairTicket.user?.email || repairTicket.userEmail || "",
-        "เบอร์โทรศัพท์": repairTicket.user?.phone || "",
-        "แผนก/สาขา": repairTicket.user?.department || "",
-        "ยี่ห้อ": repairTicket.device?.model?.brand?.name || "ไม่ระบุ",
-        "รุ่น": repairTicket.device?.model?.name || "ไม่ระบุ",
-        "S/N": repairTicket.device?.serialNumber || "ไม่ระบุ",
+        "name": deviceInfo, // ชื่อหลักของ item
+        "text_mkw33zz3": repairTicket.user?.name || "", // บุคคลติดต่อ
+        "text0": repairTicket.user?.email || repairTicket.userEmail || "", // บริษัท/หน่วยงาน
+        "text_mkw39nxa": repairTicket.user?.phone || "", // เบอร์โทรศัพท์
+        "text_mkw1pwsa": repairTicket.user?.department || "", // แผนก/สาขา
+        "text_14": repairTicket.device?.model?.brand?.name || "ไม่ระบุ", // ยี่ห้อ
+        "text_17": repairTicket.device?.model?.name || "ไม่ระบุ", // รุ่น
+        "text1": repairTicket.device?.serialNumber || "ไม่ระบุ", // S/N
+        "status": { label: this.mapStatusToMonday(repairTicket.status) }, // สถานะงาน
+        "text": repairTicket.description, // ปฎิบัติงาน / อาการ
+        "text89": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`, // ติดต่อชื่อ เบอร์
       };
 
       // Convert column values to JSON string
