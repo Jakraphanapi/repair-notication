@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { openUrl } from "@/lib/liff-utils";
+import { retrieveLineUidFromSession } from "@/lib/auth-utils";
 
 function CompleteRegistrationContent() {
   const { data: session, update } = useSession();
@@ -13,7 +14,7 @@ function CompleteRegistrationContent() {
   const [isLinking, setIsLinking] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
-  const lineUid = searchParams.get("lineUid");
+  const lineUid = searchParams.get("lineUid") || retrieveLineUidFromSession();
   const displayName = searchParams.get("displayName");
   const pictureUrl = searchParams.get("pictureUrl");
 

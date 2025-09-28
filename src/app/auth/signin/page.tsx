@@ -1,12 +1,15 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { useLiff } from "@/hooks/useLiff";
+import { storeLineUidInSession, isValidLineUid, storeLineUidInLocalStorage } from "@/lib/auth-utils";
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
 
   const {
     isLiffReady,
@@ -19,11 +22,44 @@ export default function SignInPage() {
     loginToLine,
   } = useLiff();
 
+  // Extract LINE UID from URL parameters and store in session
+  useEffect(() => {
+    const urlLineUid = searchParams.get('lineUid');
+    if (urlLineUid && isValidLineUid(urlLineUid)) {
+      storeLineUidInSession(urlLineUid);
+      storeLineUidInLocalStorage(urlLineUid);
+      console.log('LINE UID from URL stored in session and localStorage:', urlLineUid);
+    }
+  }, [searchParams]);
+
+  // Store LINE UID from LIFF when available
+  useEffect(() => {
+    if (isLiffReady && isLineLoggedIn && lineUid && isValidLineUid(lineUid)) {
+      storeLineUidInLocalStorage(lineUid);
+      console.log('LINE UID from LIFF stored in localStorage:', lineUid);
+    }
+  }, [isLiffReady, isLineLoggedIn, lineUid]);
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Check if we're in LINE client and can get LINE UID
+      let callbackUrl = "/repair/new";
+
+      if (isLiffReady && isInLineClient && lineUid) {
+        // If we have LINE UID, redirect to complete registration page
+        callbackUrl = `/line/complete-registration?lineUid=${encodeURIComponent(lineUid)}&displayName=${encodeURIComponent(lineProfile?.displayName || "")}&pictureUrl=${encodeURIComponent(lineProfile?.pictureUrl || "")}`;
+        console.log('Google sign-in with LINE UID:', lineUid);
+      } else if (isLiffReady && isInLineClient && !isLineLoggedIn) {
+        // If in LINE client but not logged in, try to login first
+        toast("กรุณาเข้าสู่ระบบ LINE ก่อน");
+        loginToLine();
+        setIsLoading(false);
+        return;
+      }
+
       const result = await signIn("google", {
-        callbackUrl: "/repair/new",
+        callbackUrl,
         redirect: true,
       });
 

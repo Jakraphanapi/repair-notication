@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 // import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma";
+import { retrieveLineUidFromSession, retrieveLineUidFromLocalStorage } from "@/lib/auth-utils";
 // import { UserRole } from "@prisma/client"
 
 export const authOptions: NextAuthOptions = {
@@ -75,9 +76,23 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
+          // Extract LINE UID from profile, user data, or storage
+          let lineUid = (profile as any)?.lineUid || (user as any)?.lineUid;
+
+          // If no LINE UID in profile/user data, try to get from storage
+          if (!lineUid && typeof window !== 'undefined') {
+            // Try session storage first (for URL parameters)
+            lineUid = retrieveLineUidFromSession();
+
+            // If not in session storage, try localStorage (for LIFF)
+            if (!lineUid) {
+              lineUid = retrieveLineUidFromLocalStorage();
+            }
+          }
+
           // Check if user exists in database
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! },
@@ -91,6 +106,8 @@ export const authOptions: NextAuthOptions = {
                 name: user.name!,
                 image: user.image,
                 role: "USER",
+                // Store LINE UID if available
+                lineUserId: lineUid || null,
               },
             });
 
@@ -109,6 +126,11 @@ export const authOptions: NextAuthOptions = {
                 id_token: account.id_token,
               },
             });
+
+            // Log LINE UID linking if successful
+            if (lineUid) {
+              console.log(`Created new user with LINE UID: ${lineUid} for email: ${user.email}`);
+            }
           } else {
             // Check if account already linked
             const existingAccount = await prisma.account.findFirst({
@@ -136,12 +158,20 @@ export const authOptions: NextAuthOptions = {
               });
             }
 
-            // Update profile image from Google
+            // Update profile image and LINE UID from Google if available
+            const updateData: any = {
+              image: user.image,
+            };
+
+            // Update LINE UID if available and not already set
+            if (lineUid && !existingUser.lineUserId) {
+              updateData.lineUserId = lineUid;
+              console.log(`Linked LINE UID: ${lineUid} to existing user: ${user.email}`);
+            }
+
             await prisma.user.update({
               where: { id: existingUser.id },
-              data: {
-                image: user.image,
-              },
+              data: updateData,
             });
           }
           return true;

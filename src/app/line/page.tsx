@@ -76,33 +76,19 @@ export default function LineEntryPage() {
   }, [isLiffReady, isLineLoggedIn, lineUid, lineProfile]);
 
   const handleRegister = async () => {
-    if (!lineUid || !lineProfile) {
-      toast.error("ไม่สามารถดึงข้อมูล LINE ได้");
+    if (!isLiffReady || !isLineLoggedIn || !lineUid) {
+      toast.error("กรุณาเข้าสู่ระบบ LINE ก่อน");
       return;
     }
 
     setIsLoading(true);
     try {
-      // Register/sign in directly with LINE credentials via NextAuth
-      const result = await signIn("line", {
-        lineUid,
-        displayName: lineProfile.displayName,
-        email: lineProfile.email || `line_${lineUid}@example.com`,
-        pictureUrl: lineProfile.pictureUrl || "",
-        redirect: true,
-        callbackUrl: "/line/complete-registration?lineUid=" +
-          encodeURIComponent(lineUid) +
-          "&displayName=" + encodeURIComponent(lineProfile.displayName) +
-          "&pictureUrl=" + encodeURIComponent(lineProfile.pictureUrl || ""),
-      });
-
-      if ((result as any)?.error) {
-        toast.error("เกิดข้อผิดพลาดในการลงทะเบียน");
-      }
+      // Redirect to Google OAuth with LINE UID in URL
+      const googleOAuthUrl = `/api/auth/signin/google?lineUid=${encodeURIComponent(lineUid)}`;
+      window.location.href = googleOAuthUrl;
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error("Error initiating Google OAuth:", error);
       toast.error("เกิดข้อผิดพลาดในการลงทะเบียน");
-    } finally {
       setIsLoading(false);
     }
   };
