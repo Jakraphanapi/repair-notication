@@ -67,11 +67,9 @@ export class LineService {
     // Simplified message for now
     const message = {
       type: "text" as const,
-      text: `🔧 การแจ้งซ่อมใหม่\n\nTicket: ${
-        ticketData.ticketNumber
-      }\nชื่อผู้แจ้ง: ${ticketData.user?.name || "N/A"}\nปัญหา: ${
-        ticketData.title
-      }\n\nรายละเอียด: ${ticketData.description}`,
+      text: `🔧 การแจ้งซ่อมใหม่\n\nTicket: ${ticketData.ticketNumber
+        }\nชื่อผู้แจ้ง: ${ticketData.user?.name || "N/A"}\nปัญหา: ${ticketData.title
+        }\n\nรายละเอียด: ${ticketData.description}`,
     };
 
     return client.pushMessage(groupId, message);
@@ -96,7 +94,7 @@ export class LineService {
           },
           action: {
             type: "uri",
-            uri: `${process.env.NEXTAUTH_URL}/repair/new`,
+            uri: `${process.env.NEXTAUTH_URL}/repair`,
           },
         },
         {

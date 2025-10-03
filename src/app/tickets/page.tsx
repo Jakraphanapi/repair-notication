@@ -203,7 +203,7 @@ export default function TicketsPage() {
             </div>
             <div className="flex items-center space-x-4">
               <Link
-                href="/repair/new"
+                href="/repair"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 แจ้งซ่อมใหม่
@@ -415,11 +415,10 @@ export default function TicketsPage() {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          page === pagination.page
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === pagination.page
                             ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
                             : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                        }`}
+                          }`}
                       >
                         {page}
                       </button>

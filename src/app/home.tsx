@@ -78,7 +78,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             <Link
-              href="/repair/new"
+              href="/repair"
               className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow"
             >
               <div className="p-5">
