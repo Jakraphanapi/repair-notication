@@ -57,6 +57,9 @@ export class MondayService {
         columnValues: columnValuesJson,
       });
 
+      console.log("Column values object:", JSON.stringify(columnValues, null, 2));
+      console.log("Column values JSON:", columnValuesJson);
+
       const response = await axios.post(
         this.apiUrl,
         {
