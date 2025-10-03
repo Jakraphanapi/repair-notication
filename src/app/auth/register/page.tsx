@@ -42,7 +42,7 @@ export default function GmailRegistrationPage() {
         console.log('Gmail registration with LINE UID:', lineUid);
       } else if (isLiffReady && isInLineClient && !isLineLoggedIn) {
         // If in LINE client but not logged in, try to login first
-        toast.info("กรุณาเข้าสู่ระบบ LINE ก่อนเพื่อรับการแจ้งเตือน");
+        toast.success("กรุณาเข้าสู่ระบบ LINE ก่อนเพื่อรับการแจ้งเตือน");
         loginToLine();
         setIsLoading(false);
         return;

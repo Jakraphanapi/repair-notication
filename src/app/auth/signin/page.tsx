@@ -1,13 +1,13 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { useLiff } from "@/hooks/useLiff";
 import { storeLineUidInSession, isValidLineUid, storeLineUidInLocalStorage } from "@/lib/auth-utils";
 
-export default function SignInPage() {
+function SignInContent() {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
 
@@ -284,5 +284,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInContent />
+    </Suspense>
   );
 }

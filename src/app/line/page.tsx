@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
 import { openUrl } from "@/lib/liff-utils";
 import { useLiff } from "@/hooks/useLiff";
 import toast from "react-hot-toast";

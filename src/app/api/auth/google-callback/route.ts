@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { extractLineUidFromRequest } from "@/lib/auth-utils";
 
 /**
  * Handle Google OAuth callback and link LINE UID if available
