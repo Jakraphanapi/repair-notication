@@ -24,7 +24,7 @@ interface GoogleFormData {
 export async function POST(request: NextRequest) {
   try {
     const data: GoogleFormData = await request.json();
-
+    console.log("Google Form Data:", data);
     // Validate required fields
     if (!data.email || !data.title || !data.description) {
       return NextResponse.json(
