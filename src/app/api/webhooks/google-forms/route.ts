@@ -13,6 +13,12 @@ interface GoogleFormData {
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   deviceInfo: string;
   images?: string[];
+  phone?: string;
+  company?: string;
+  department?: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -38,6 +44,7 @@ export async function POST(request: NextRequest) {
         data: {
           email: data.email,
           name: data.name,
+          phone: data.phone || null,
           role: "USER",
         },
       });
@@ -111,9 +118,8 @@ export async function POST(request: NextRequest) {
       data: {
         ticketNumber,
         title: data.title,
-        description: `${data.description}\n\nอุปกรณ์: ${
-          data.deviceInfo || "ไม่ระบุ"
-        }\n\nส่งผ่าน Google Forms เมื่อ: ${data.timestamp}`,
+        description: `${data.description}\n\nอุปกรณ์: ${data.deviceInfo || "ไม่ระบุ"
+          }\n\nส่งผ่าน Google Forms เมื่อ: ${data.timestamp}`,
         priority: data.priority || "MEDIUM",
         status: "PENDING",
         userId: user.id,
