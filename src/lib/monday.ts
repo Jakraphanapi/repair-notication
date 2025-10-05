@@ -112,22 +112,91 @@ export class MondayService {
         "text89": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`, // ติดต่อชื่อ เบอร์
       };
 
-      // Add images if available (as text fields with Google Drive links)
+      // Add images if available (support multiple Files columns)
       if (imageUrls.length > 0) {
         // Create formatted text with Google Drive links for Monday.com attachment
         const imageText = attachmentUrls.map((url, index) =>
           `รูปภาพ ${index + 1}: ${url}`
         ).join("\n");
 
-        // Add to text columns for manual attachment
+        // Detect available Files columns (prioritize "รูป/วีดิโอประกอบ")
+        const availableFilesColumns = await this.detectFilesColumns();
+
+        // Try to use detected Files columns first
+        let filesColumnUsed = false;
+        if (availableFilesColumns.length > 0) {
+          // If there are multiple Files columns, prioritize "รูป/วีดิโอประกอบ" (files)
+          if (availableFilesColumns.length > 1) {
+            console.log(`Multiple Files columns available: ${availableFilesColumns.join(', ')}`);
+
+            // Prioritize "files" column (รูป/วีดิโอประกอบ) for images
+            const imageColumn = availableFilesColumns.find(id => id === 'files');
+            if (imageColumn) {
+              const filesData = attachmentUrls.map(url => ({
+                url: url,
+                name: `รูปภาพจาก Google Drive`
+              }));
+              columnValues[imageColumn] = filesData;
+              filesColumnUsed = true;
+              console.log(`Using prioritized image column: ${imageColumn} (รูป/วีดิโอประกอบ)`);
+            } else {
+              // Fallback: distribute images
+              const distribution = this.distributeImagesAcrossColumns(attachmentUrls, availableFilesColumns);
+              Object.entries(distribution).forEach(([columnId, filesData]) => {
+                columnValues[columnId] = filesData;
+                console.log(`Added ${filesData.length} images to column: ${columnId}`);
+              });
+              filesColumnUsed = true;
+            }
+          } else {
+            // Single Files column - add all images (preferably "รูป/วีดิโอประกอบ")
+            const filesData = attachmentUrls.map(url => ({
+              url: url,
+              name: `รูปภาพจาก Google Drive`
+            }));
+
+            columnValues[availableFilesColumns[0]] = filesData;
+            filesColumnUsed = true;
+            console.log(`Using Files column: ${availableFilesColumns[0]} (รูป/วีดิโอประกอบ)`);
+          }
+        } else {
+          // Fallback: Try specific column IDs for "รูป/วีดิโอประกอบ" (based on your board structure)
+          const possibleImageVideoColumns = [
+            "files",             // รูป/วีดิโอประกอบ (from your board)
+            "files6",            // เสนอราคา/งาน (also file type)
+            "files9",            // เอกสารตรวจซ่อม/Invoice (also file type)
+            "files2",            // คู่มือ (also file type)
+            "รูป/วีดิโอประกอบ",  // Exact Thai name
+            "รูปวีดิโอประกอบ",    // Without slash
+            "รูปภาพ",            // Just images
+            "วีดิโอ"             // Just video
+          ];
+
+          for (const columnId of possibleImageVideoColumns) {
+            if (!filesColumnUsed) {
+              const filesData = attachmentUrls.map(url => ({
+                url: url,
+                name: `รูปภาพจาก Google Drive`
+              }));
+              columnValues[columnId] = filesData;
+              filesColumnUsed = true;
+              console.log(`Using fallback column for รูป/วีดิโอประกอบ: ${columnId}`);
+              break;
+            }
+          }
+        }
+
+        // Fallback: Add to text columns as well
         columnValues["text_images"] = imageText;
         columnValues["text_image_links"] = imageUrls.join("\n");
 
         // Add a note about manual attachment with instructions
         const currentDescription = columnValues["text"] || "";
-        columnValues["text"] = `${currentDescription}\n\n📎 รูปภาพที่แนบ:\n${imageText}\n\n📋 วิธีแนบรูปภาพ:\n1. คลิกที่ "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง`;
+        columnValues["text"] = `${currentDescription}\n\n📎 รูปภาพที่แนบ:\n${imageText}\n\n📋 วิธีแนบรูปภาพใน "รูป/วีดิโอประกอบ":\n1. คลิกที่ column "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive" หรือ "From Link"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง\n5. รูปภาพจะแสดงใน column "รูป/วีดิโอประกอบ"`;
 
         console.log("Added images to Monday.com:", {
+          detected_files_columns: availableFilesColumns,
+          files_column_used: filesColumnUsed,
           text_images: columnValues["text_images"],
           text_image_links: columnValues["text_image_links"],
           attachment_urls: attachmentUrls,
@@ -216,6 +285,82 @@ export class MondayService {
       }
 
       return null;
+    }
+  }
+
+  // Method to distribute images across multiple Files columns
+  static distributeImagesAcrossColumns(
+    imageUrls: string[],
+    filesColumns: string[]
+  ): Record<string, any[]> {
+    const distribution: Record<string, any[]> = {};
+
+    if (filesColumns.length === 0 || imageUrls.length === 0) {
+      return distribution;
+    }
+
+    // Distribute images evenly across available Files columns
+    const imagesPerColumn = Math.ceil(imageUrls.length / filesColumns.length);
+
+    filesColumns.forEach((columnId, columnIndex) => {
+      const startIndex = columnIndex * imagesPerColumn;
+      const endIndex = Math.min(startIndex + imagesPerColumn, imageUrls.length);
+      const columnImages = imageUrls.slice(startIndex, endIndex);
+
+      if (columnImages.length > 0) {
+        distribution[columnId] = columnImages.map(url => ({
+          url: url,
+          name: `รูปภาพจาก Google Drive`
+        }));
+      }
+    });
+
+    console.log("Distributed images across columns:", distribution);
+    return distribution;
+  }
+
+  // Method to detect available Files columns
+  static async detectFilesColumns(): Promise<string[]> {
+    try {
+      const columns = await this.getBoardColumns();
+      if (!columns?.data?.boards?.[0]?.columns) {
+        return [];
+      }
+
+      // Look for specific "รูป/วีดิโอประกอบ" column first
+      const imageVideoColumn = columns.data.boards[0].columns
+        .find((col: any) =>
+          col.title.includes('รูป/วีดิโอประกอบ') ||
+          col.title.includes('รูป') ||
+          col.title.includes('วีดิโอ') ||
+          col.title.includes('Image') ||
+          col.title.includes('Video')
+        );
+
+      if (imageVideoColumn) {
+        console.log(`Found specific image/video column: ${imageVideoColumn.title} (${imageVideoColumn.id})`);
+        return [imageVideoColumn.id];
+      }
+
+      // Also check for "files" column specifically (based on your board structure)
+      const filesColumn = columns.data.boards[0].columns
+        .find((col: any) => col.id === 'files' && col.type === 'file');
+
+      if (filesColumn) {
+        console.log(`Found files column: ${filesColumn.title} (${filesColumn.id})`);
+        return [filesColumn.id];
+      }
+
+      // Fallback: Look for any Files columns (including all file type columns from your board)
+      const filesColumns = columns.data.boards[0].columns
+        .filter((col: any) => col.type === 'file')
+        .map((col: any) => col.id);
+
+      console.log("Detected Files columns:", filesColumns);
+      return filesColumns;
+    } catch (error) {
+      console.error("Error detecting Files columns:", error);
+      return [];
     }
   }
 
