@@ -25,16 +25,47 @@ export class MondayService {
         ? repairTicket.description.split('อุปกรณ์:')[1]?.split('\n')[0]?.trim() || "ไม่ระบุ"
         : "ไม่ระบุ";
 
+      // Extract additional data from Google Form description
+      const extractGoogleFormData = (description: string) => {
+        const data: any = {};
+
+        // Extract company
+        const companyMatch = description.match(/บริษัท\/หน่วยงาน:\s*([^\n]+)/);
+        if (companyMatch) data.company = companyMatch[1].trim();
+
+        // Extract department
+        const deptMatch = description.match(/แผนก\/สาขา:\s*([^\n]+)/);
+        if (deptMatch) data.department = deptMatch[1].trim();
+
+        // Extract brand
+        const brandMatch = description.match(/ยี่ห้อ:\s*([^\n]+)/);
+        if (brandMatch) data.brand = brandMatch[1].trim();
+
+        // Extract model
+        const modelMatch = description.match(/รุ่น:\s*([^\n]+)/);
+        if (modelMatch) data.model = modelMatch[1].trim();
+
+        // Extract serial number
+        const serialMatch = description.match(/S\/N:\s*([^\n]+)/);
+        if (serialMatch) data.serialNumber = serialMatch[1].trim();
+
+        return data;
+      };
+
+      const googleFormData = extractGoogleFormData(repairTicket.description);
+
+      console.log("Extracted Google Form data:", googleFormData);
+
       // Prepare column values using actual Monday.com column IDs
       const columnValues = {
         "name": deviceInfo, // ชื่อหลักของ item
         "text_mkw33zz3": repairTicket.user?.name || "", // บุคคลติดต่อ
-        "text0": repairTicket.user?.email || repairTicket.userEmail || "", // บริษัท/หน่วยงาน
+        "text0": googleFormData.company || repairTicket.user?.email || "", // บริษัท/หน่วยงาน
         "text_mkw39nxa": repairTicket.user?.phone || "", // เบอร์โทรศัพท์
-        "text_mkw1pwsa": repairTicket.user?.department || "", // แผนก/สาขา
-        "text_14": repairTicket.device?.model?.brand?.name || "ไม่ระบุ", // ยี่ห้อ
-        "text_17": repairTicket.device?.model?.name || "ไม่ระบุ", // รุ่น
-        "text1": repairTicket.device?.serialNumber || "ไม่ระบุ", // S/N
+        "text_mkw1pwsa": googleFormData.department || repairTicket.user?.department || "", // แผนก/สาขา
+        "text_14": googleFormData.brand || repairTicket.device?.model?.brand?.name || "ไม่ระบุ", // ยี่ห้อ
+        "text_17": googleFormData.model || repairTicket.device?.model?.name || "ไม่ระบุ", // รุ่น
+        "text1": googleFormData.serialNumber || repairTicket.device?.serialNumber || "ไม่ระบุ", // S/N
         "status": { label: this.mapStatusToMonday(repairTicket.status) }, // สถานะงาน
         "text": repairTicket.description, // ปฎิบัติงาน / อาการ
         "text89": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`, // ติดต่อชื่อ เบอร์
