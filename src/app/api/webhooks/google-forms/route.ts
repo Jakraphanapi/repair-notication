@@ -113,6 +113,10 @@ export async function POST(request: NextRequest) {
     const ticketCount = await prisma.repairTicket.count();
     const ticketNumber = `TK${(ticketCount + 1).toString().padStart(6, "0")}`;
 
+    // Process images from Google Form
+    const processedImages = data.images || [];
+    console.log("Processing images from Google Form:", processedImages);
+
     // Create repair ticket
     const repairTicket = await prisma.repairTicket.create({
       data: {
@@ -123,7 +127,7 @@ export async function POST(request: NextRequest) {
         status: "PENDING",
         userId: user.id,
         deviceId: device.id,
-        images: data.images || [],
+        images: processedImages,
       },
       include: {
         user: true,

@@ -56,8 +56,34 @@ export class MondayService {
 
       console.log("Extracted Google Form data:", googleFormData);
 
+      // Convert Google Drive file IDs to URLs
+      const convertGoogleDriveIdsToUrls = (fileIds: string[]): string[] => {
+        return fileIds.map(fileId => {
+          // Google Drive file ID to direct download URL
+          // Using direct download format for better accessibility
+          return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        });
+      };
+
+      // Alternative: Create shareable links
+      const createShareableLinks = (fileIds: string[]): string[] => {
+        return fileIds.map(fileId => {
+          return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+        });
+      };
+
+      // Process images if available
+      let imageUrls: string[] = [];
+      let shareableUrls: string[] = [];
+      if (repairTicket.images && repairTicket.images.length > 0) {
+        imageUrls = convertGoogleDriveIdsToUrls(repairTicket.images);
+        shareableUrls = createShareableLinks(repairTicket.images);
+        console.log("Converted image URLs (direct):", imageUrls);
+        console.log("Converted image URLs (shareable):", shareableUrls);
+      }
+
       // Prepare column values using actual Monday.com column IDs
-      const columnValues = {
+      const columnValues: any = {
         "name": deviceInfo, // ชื่อหลักของ item
         "text_mkw33zz3": repairTicket.user?.name || "", // บุคคลติดต่อ
         "text0": googleFormData.company || repairTicket.user?.email || "", // บริษัท/หน่วยงาน
@@ -70,6 +96,24 @@ export class MondayService {
         "text": repairTicket.description, // ปฎิบัติงาน / อาการ
         "text89": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`, // ติดต่อชื่อ เบอร์
       };
+
+      // Add images if available
+      if (imageUrls.length > 0) {
+        // Method 1: Try to add as files column (if exists)
+        columnValues["files"] = imageUrls.map(url => ({ url }));
+
+        // Method 2: Add shareable links as text field
+        columnValues["text_images"] = shareableUrls.join("\n");
+
+        // Method 3: Add direct links as another text field
+        columnValues["text_image_links"] = imageUrls.join("\n");
+
+        console.log("Added images to Monday.com:", {
+          files: columnValues["files"],
+          text_images: columnValues["text_images"],
+          text_image_links: columnValues["text_image_links"]
+        });
+      }
 
       // Convert column values to JSON string
       const columnValuesJson = JSON.stringify(columnValues);
