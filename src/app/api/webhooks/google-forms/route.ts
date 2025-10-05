@@ -48,6 +48,18 @@ export async function POST(request: NextRequest) {
           role: "USER",
         },
       });
+    } else {
+      // Update user with latest data from Google Form if provided
+      const updateData: any = {};
+      if (data.name && data.name !== user.name) updateData.name = data.name;
+      if (data.phone && data.phone !== user.phone) updateData.phone = data.phone;
+
+      if (Object.keys(updateData).length > 0) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: updateData,
+        });
+      }
     }
 
     // Create a generic device for Google Forms submissions
@@ -122,7 +134,7 @@ export async function POST(request: NextRequest) {
       data: {
         ticketNumber,
         title: data.title,
-        description: `${data.description}\n\nอุปกรณ์: ${data.deviceInfo || "ไม่ระบุ"}\n\nบริษัท/หน่วยงาน: ${data.company || "ไม่ระบุ"}\nแผนก/สาขา: ${data.department || "ไม่ระบุ"}\nยี่ห้อ: ${data.brand || "ไม่ระบุ"}\nรุ่น: ${data.model || "ไม่ระบุ"}\nS/N: ${data.serialNumber || "ไม่ระบุ"}\n\nส่งผ่าน Google Forms เมื่อ: ${data.timestamp}`,
+        description: `${data.description}\n\nอุปกรณ์: ${data.deviceInfo || "ไม่ระบุ"}\n\nชื่อผู้แจ้ง: ${data.name || "ไม่ระบุ"}\nเบอร์โทรศัพท์: ${data.phone || "ไม่ระบุ"}\nบริษัท/หน่วยงาน: ${data.company || "ไม่ระบุ"}\nแผนก/สาขา: ${data.department || "ไม่ระบุ"}\nยี่ห้อ: ${data.brand || "ไม่ระบุ"}\nรุ่น: ${data.model || "ไม่ระบุ"}\nS/N: ${data.serialNumber || "ไม่ระบุ"}\n\nส่งผ่าน Google Forms เมื่อ: ${data.timestamp}`,
         priority: data.priority || "MEDIUM",
         status: "PENDING",
         userId: user.id,

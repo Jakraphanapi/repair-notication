@@ -18,7 +18,9 @@ export async function GET() {
         }
 
         // Detect Files columns specifically
-        const filesColumns = await MondayService.detectFilesColumns();
+        const filesColumns = columns.data?.boards?.[0]?.columns
+            ?.filter((col: any) => col.type === 'file')
+            ?.map((col: any) => col.id) || [];
 
         return NextResponse.json({
             success: true,
