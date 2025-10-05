@@ -11,6 +11,11 @@ export class MondayService {
   private static apiUrl = "https://api.monday.com/v2";
 
   static async createTicket(repairTicket: any): Promise<string | null> {
+    // Declare variables at function scope for error handling
+    let imageUrls: string[] = [];
+    let googleFormData: any = {};
+    let deviceInfo: string = "";
+
     try {
       if (!this.apiToken || !this.boardId) {
         console.error("Monday.com API token or board ID not configured");
@@ -21,7 +26,7 @@ export class MondayService {
       const ticketName = `${repairTicket.ticketNumber} - ${repairTicket.title}`;
 
       // Extract device info from description (from Google Forms)
-      const deviceInfo = repairTicket.description.includes('อุปกรณ์:')
+      deviceInfo = repairTicket.description.includes('อุปกรณ์:')
         ? repairTicket.description.split('อุปกรณ์:')[1]?.split('\n')[0]?.trim() || "ไม่ระบุ"
         : "ไม่ระบุ";
 
@@ -52,7 +57,7 @@ export class MondayService {
         return data;
       };
 
-      const googleFormData = extractGoogleFormData(repairTicket.description);
+      googleFormData = extractGoogleFormData(repairTicket.description);
 
       console.log("Extracted Google Form data:", googleFormData);
 
@@ -72,14 +77,24 @@ export class MondayService {
         });
       };
 
+      // Create Google Drive attachment links for Monday.com
+      const createGoogleDriveAttachmentLinks = (fileIds: string[]): string[] => {
+        return fileIds.map(fileId => {
+          // Format for Monday.com Google Drive integration
+          return `https://drive.google.com/file/d/${fileId}/view`;
+        });
+      };
+
       // Process images if available
-      let imageUrls: string[] = [];
       let shareableUrls: string[] = [];
+      let attachmentUrls: string[] = [];
       if (repairTicket.images && repairTicket.images.length > 0) {
         imageUrls = convertGoogleDriveIdsToUrls(repairTicket.images);
         shareableUrls = createShareableLinks(repairTicket.images);
+        attachmentUrls = createGoogleDriveAttachmentLinks(repairTicket.images);
         console.log("Converted image URLs (direct):", imageUrls);
         console.log("Converted image URLs (shareable):", shareableUrls);
+        console.log("Converted image URLs (attachment):", attachmentUrls);
       }
 
       // Prepare column values using actual Monday.com column IDs
@@ -97,21 +112,26 @@ export class MondayService {
         "text89": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`, // ติดต่อชื่อ เบอร์
       };
 
-      // Add images if available
+      // Add images if available (as text fields with Google Drive links)
       if (imageUrls.length > 0) {
-        // Method 1: Try to add as files column (if exists)
-        columnValues["files"] = imageUrls.map(url => ({ url }));
+        // Create formatted text with Google Drive links for Monday.com attachment
+        const imageText = attachmentUrls.map((url, index) =>
+          `รูปภาพ ${index + 1}: ${url}`
+        ).join("\n");
 
-        // Method 2: Add shareable links as text field
-        columnValues["text_images"] = shareableUrls.join("\n");
-
-        // Method 3: Add direct links as another text field
+        // Add to text columns for manual attachment
+        columnValues["text_images"] = imageText;
         columnValues["text_image_links"] = imageUrls.join("\n");
 
+        // Add a note about manual attachment with instructions
+        const currentDescription = columnValues["text"] || "";
+        columnValues["text"] = `${currentDescription}\n\n📎 รูปภาพที่แนบ:\n${imageText}\n\n📋 วิธีแนบรูปภาพ:\n1. คลิกที่ "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง`;
+
         console.log("Added images to Monday.com:", {
-          files: columnValues["files"],
           text_images: columnValues["text_images"],
-          text_image_links: columnValues["text_image_links"]
+          text_image_links: columnValues["text_image_links"],
+          attachment_urls: attachmentUrls,
+          updated_description: columnValues["text"]
         });
       }
 
@@ -155,6 +175,19 @@ export class MondayService {
 
       console.log("Monday.com API response:", response.data);
 
+      // Check for errors first
+      if (response.data?.errors && response.data.errors.length > 0) {
+        console.error("Monday.com API errors:", response.data.errors);
+
+        // Try to create ticket without images if there's an error
+        if (imageUrls.length > 0) {
+          console.log("Retrying without images due to API error...");
+          return await this.createTicketWithoutImages(repairTicket, googleFormData, deviceInfo);
+        }
+
+        return null;
+      }
+
       // Extract item ID from response
       const itemId = response.data?.data?.create_item?.id;
       if (!itemId) {
@@ -171,6 +204,100 @@ export class MondayService {
       return itemId;
     } catch (error) {
       console.error("Error creating Monday.com ticket:", error);
+
+      // If there's an error and we have images, try without images
+      if (imageUrls && imageUrls.length > 0) {
+        console.log("Caught error, retrying without images...");
+        try {
+          return await this.createTicketWithoutImages(repairTicket, googleFormData, deviceInfo);
+        } catch (retryError) {
+          console.error("Error in retry without images:", retryError);
+        }
+      }
+
+      return null;
+    }
+  }
+
+  // Method to upload files to Monday.com (for future use)
+  static async uploadFileToMonday(
+    fileUrl: string,
+    fileName: string,
+    itemId: string
+  ): Promise<boolean> {
+    try {
+      // This would require implementing multipart/form-data upload
+      // For now, we'll use text-based approach
+      console.log(`Would upload file: ${fileName} from ${fileUrl} to item ${itemId}`);
+      return true;
+    } catch (error) {
+      console.error("Error uploading file to Monday.com:", error);
+      return false;
+    }
+  }
+
+  // Fallback method to create ticket without images
+  private static async createTicketWithoutImages(
+    repairTicket: any,
+    googleFormData: any,
+    deviceInfo: string
+  ): Promise<string | null> {
+    try {
+      const ticketName = `${repairTicket.ticketNumber} - ${repairTicket.title}`;
+
+      // Prepare column values without images
+      const columnValues = {
+        "name": deviceInfo,
+        "text_mkw33zz3": repairTicket.user?.name || "",
+        "text0": googleFormData.company || repairTicket.user?.email || "",
+        "text_mkw39nxa": repairTicket.user?.phone || "",
+        "text_mkw1pwsa": googleFormData.department || repairTicket.user?.department || "",
+        "text_14": googleFormData.brand || repairTicket.device?.model?.brand?.name || "ไม่ระบุ",
+        "text_17": googleFormData.model || repairTicket.device?.model?.name || "ไม่ระบุ",
+        "text1": googleFormData.serialNumber || repairTicket.device?.serialNumber || "ไม่ระบุ",
+        "status": { label: this.mapStatusToMonday(repairTicket.status) },
+        "text": repairTicket.description,
+        "text89": `${repairTicket.user?.name || ""} ${repairTicket.user?.email || ""}`,
+      };
+
+      const columnValuesJson = JSON.stringify(columnValues);
+      const query = `mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
+        create_item (board_id: $boardId, item_name: $itemName, column_values: $columnValues) {
+          id
+        }
+      }`;
+
+      console.log("Retrying Monday.com creation without images...");
+
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          query,
+          variables: {
+            boardId: this.boardId,
+            itemName: ticketName,
+            columnValues: columnValuesJson,
+          },
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: this.apiToken,
+          },
+        }
+      );
+
+      console.log("Monday.com retry response:", response.data);
+
+      const itemId = response.data?.data?.create_item?.id;
+      if (itemId) {
+        console.log(`Created Monday.com ticket without images: ${itemId}`);
+        return itemId;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error creating Monday.com ticket without images:", error);
       return null;
     }
   }
