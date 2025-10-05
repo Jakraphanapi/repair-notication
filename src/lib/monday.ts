@@ -127,18 +127,33 @@ export class MondayService {
           `รูปภาพ ${index + 1}: ${url}`
         ).join("\n");
 
-        // Add instruction text for manual attachment
-        const instructionText = `\n\n📋 วิธีแนบรูปภาพใน "รูป/วีดิโอประกอบ":\n1. คลิกที่ column "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive" หรือ "From Link"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง\n5. รูปภาพจะแสดงใน column "รูป/วีดิโอประกอบ"`;
+        // Option 1: Use text-based approach (current method)
+        const useTextBasedApproach = true; // Set to false to try file upload
 
-        // Add image links to description
-        const updatedDescription = `${repairTicket.description}\n\n📎 รูปภาพที่แนบ:\n${imageText}${instructionText}`;
-        columnValues["text"] = updatedDescription;
+        if (useTextBasedApproach) {
+          // Add instruction text for manual attachment
+          const instructionText = `\n\n📋 วิธีแนบรูปภาพใน "รูป/วีดิโอประกอบ":\n1. คลิกที่ column "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive" หรือ "From Link"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง\n5. รูปภาพจะแสดงใน column "รูป/วีดิโอประกอบ"`;
 
-        // Add image links to dedicated text columns for easy access
-        columnValues["text_images"] = imageText;
-        columnValues["text_image_links"] = attachmentUrls.join('\n');
+          // Add image links to description
+          const updatedDescription = `${repairTicket.description}\n\n📎 รูปภาพที่แนบ:\n${imageText}${instructionText}`;
+          columnValues["text"] = updatedDescription;
 
-        console.log("Added image links to description and text columns (Monday.com Files API doesn't support Google Drive URLs directly)");
+          // Add image links to dedicated text columns for easy access
+          columnValues["text_images"] = imageText;
+          columnValues["text_image_links"] = attachmentUrls.join('\n');
+
+          console.log("Added image links to description and text columns (Monday.com Files API doesn't support Google Drive URLs directly)");
+        } else {
+          // Option 2: Try to upload files directly (experimental)
+          console.log("Attempting to upload files directly to Monday.com...");
+          // Note: This would require the ticket to be created first, then files uploaded
+          // For now, we'll still use text-based approach as fallback
+          const instructionText = `\n\n📋 รูปภาพจะถูกแนบอัตโนมัติ (หรือใช้ลิงก์ด้านล่าง):\n${imageText}`;
+          const updatedDescription = `${repairTicket.description}\n\n📎 รูปภาพที่แนบ:\n${imageText}${instructionText}`;
+          columnValues["text"] = updatedDescription;
+          columnValues["text_images"] = imageText;
+          columnValues["text_image_links"] = attachmentUrls.join('\n');
+        }
       }
 
       // Convert column values to JSON string
@@ -256,17 +271,51 @@ export class MondayService {
     return distribution;
   }
 
-  // Method to upload files to Monday.com (for future use)
+  // Method to upload files to Monday.com
   static async uploadFileToMonday(
     fileUrl: string,
     fileName: string,
-    itemId: string
+    _itemId: string
   ): Promise<boolean> {
     try {
-      // This would require implementing multipart/form-data upload
-      // For now, we'll use text-based approach
-      console.log(`Would upload file: ${fileName} from ${fileUrl} to item ${itemId}`);
+      if (!this.apiToken) {
+        console.error("Monday.com API token not configured");
+        return false;
+      }
+
+      // Download file from Google Drive URL
+      const fileResponse = await fetch(fileUrl);
+      if (!fileResponse.ok) {
+        console.error(`Failed to download file from ${fileUrl}`);
+        return false;
+      }
+
+      const fileBuffer = await fileResponse.arrayBuffer();
+      const fileBlob = new Blob([fileBuffer]);
+
+      // Create FormData for multipart upload
+      const formData = new FormData();
+      formData.append('file', fileBlob, fileName);
+
+      // Upload to Monday.com
+      const uploadResponse = await fetch(`${this.apiUrl}/file`, {
+        method: 'POST',
+        headers: {
+          'Authorization': this.apiToken,
+        },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error(`Monday.com file upload failed: ${uploadResponse.status} ${errorText}`);
+        return false;
+      }
+
+      const uploadResult = await uploadResponse.json();
+      console.log(`File uploaded successfully: ${uploadResult.data?.id}`);
       return true;
+
     } catch (error) {
       console.error("Error uploading file to Monday.com:", error);
       return false;
