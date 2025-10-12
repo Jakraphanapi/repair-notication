@@ -145,12 +145,11 @@ export class MondayService {
         const useTextBasedApproach = true; // Set to false to try file upload
 
         if (useTextBasedApproach) {
-          // Add instruction text for manual attachment
+          // Keep description clean - only device description with instruction text
           const instructionText = `\n\n📋 วิธีแนบรูปภาพใน "รูป/วีดิโอประกอบ":\n1. คลิกที่ column "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive" หรือ "From Link"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง\n5. รูปภาพจะแสดงใน column "รูป/วีดิโอประกอบ"`;
 
-          // Keep description clean - only device description
-          columnValues["text"] = repairTicket.description;
-
+          columnValues["text"] = repairTicket.description + instructionText;
+ 
           // Add image links to dedicated text columns for easy access
           columnValues["text_images"] = imageText;
           columnValues["text_image_links"] = attachmentUrls.join("\n");
