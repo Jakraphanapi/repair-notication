@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       data: {
         ticketNumber,
         title: data.title,
-        description: `${data.description}\n\nอุปกรณ์: ${data.deviceInfo || "ไม่ระบุ"}\n\nชื่อผู้แจ้ง: ${data.name || "ไม่ระบุ"}\nเบอร์โทรศัพท์: ${data.phone || "ไม่ระบุ"}\nบริษัท/หน่วยงาน: ${data.company || "ไม่ระบุ"}\nแผนก/สาขา: ${data.department || "ไม่ระบุ"}\nยี่ห้อ: ${data.brand || "ไม่ระบุ"}\nรุ่น: ${data.model || "ไม่ระบุ"}\nS/N: ${data.serialNumber || "ไม่ระบุ"}\n\nส่งผ่าน Google Forms เมื่อ: ${data.timestamp}`,
+        description: data.description, // รายละเอียดตัวเครื่องเท่านั้น
         priority: data.priority || "MEDIUM",
         status: "PENDING",
         userId: user.id,

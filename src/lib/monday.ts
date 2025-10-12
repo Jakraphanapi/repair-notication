@@ -23,11 +23,14 @@ export class MondayService {
       }
       console.log("Creating ticket for repair ticket:", repairTicket);
       // Prepare ticket data
-      const ticketName = `${repairTicket.ticketNumber} - ${repairTicket.title}`;
+      const ticketName = `${repairTicket.title}`;
 
       // Extract device info from description (from Google Forms)
-      deviceInfo = repairTicket.description.includes('อุปกรณ์:')
-        ? repairTicket.description.split('อุปกรณ์:')[1]?.split('\n')[0]?.trim() || "ไม่ระบุ"
+      deviceInfo = repairTicket.description.includes("อุปกรณ์:")
+        ? repairTicket.description
+          .split("อุปกรณ์:")[1]
+          ?.split("\n")[0]
+          ?.trim() || "ไม่ระบุ"
         : "ไม่ระบุ";
 
       // Extract additional data from Google Form description
@@ -71,7 +74,7 @@ export class MondayService {
 
       // Convert Google Drive file IDs to URLs
       const convertGoogleDriveIdsToUrls = (fileIds: string[]): string[] => {
-        return fileIds.map(fileId => {
+        return fileIds.map((fileId) => {
           // Google Drive file ID to direct download URL
           // Using direct download format for better accessibility
           return `https://drive.google.com/uc?export=view&id=${fileId}`;
@@ -80,14 +83,16 @@ export class MondayService {
 
       // Alternative: Create shareable links
       const createShareableLinks = (fileIds: string[]): string[] => {
-        return fileIds.map(fileId => {
+        return fileIds.map((fileId) => {
           return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
         });
       };
 
       // Create Google Drive attachment links for Monday.com
-      const createGoogleDriveAttachmentLinks = (fileIds: string[]): string[] => {
-        return fileIds.map(fileId => {
+      const createGoogleDriveAttachmentLinks = (
+        fileIds: string[]
+      ): string[] => {
+        return fileIds.map((fileId) => {
           // Format for Monday.com Google Drive integration
           return `https://drive.google.com/file/d/${fileId}/view`;
         });
@@ -107,25 +112,34 @@ export class MondayService {
 
       // Prepare column values using actual Monday.com column IDs
       const columnValues: any = {
-        "name": deviceInfo, // ชื่อหลักของ item
-        "text_mkw33zz3": googleFormData.name || repairTicket.user?.name || "", // บุคคลติดต่อ
-        "text0": googleFormData.company || repairTicket.user?.email || "", // บริษัท/หน่วยงาน
-        "text_mkw39nxa": googleFormData.phone || repairTicket.user?.phone || "", // เบอร์โทรศัพท์
-        "text_mkw1pwsa": googleFormData.department || repairTicket.user?.department || "", // แผนก/สาขา
-        "text_14": googleFormData.brand || repairTicket.device?.model?.brand?.name || "ไม่ระบุ", // ยี่ห้อ
-        "text_17": googleFormData.model || repairTicket.device?.model?.name || "ไม่ระบุ", // รุ่น
-        "text1": googleFormData.serialNumber || repairTicket.device?.serialNumber || "ไม่ระบุ", // S/N
-        "status": { label: this.mapStatusToMonday(repairTicket.status) }, // สถานะงาน
-        "text": repairTicket.description, // ปฎิบัติงาน / อาการ
-        "text89": `${googleFormData.name || repairTicket.user?.name || ""} ${googleFormData.phone || repairTicket.user?.phone || ""}`, // ติดต่อชื่อ เบอร์
+        name: deviceInfo, // ชื่อหลักของ item
+        text_mkw33zz3: googleFormData.name || repairTicket.user?.name || "", // บุคคลติดต่อ
+        text0: googleFormData.company || repairTicket.user?.email || "", // บริษัท/หน่วยงาน
+        text_mkw39nxa: googleFormData.phone || repairTicket.user?.phone || "", // เบอร์โทรศัพท์
+        text_mkw1pwsa:
+          googleFormData.department || repairTicket.user?.department || "", // แผนก/สาขา
+        text_14:
+          googleFormData.brand ||
+          repairTicket.device?.model?.brand?.name ||
+          "ไม่ระบุ", // ยี่ห้อ
+        text_17:
+          googleFormData.model || repairTicket.device?.model?.name || "ไม่ระบุ", // รุ่น
+        text1:
+          googleFormData.serialNumber ||
+          repairTicket.device?.serialNumber ||
+          "ไม่ระบุ", // S/N
+        status: { label: this.mapStatusToMonday(repairTicket.status) }, // สถานะงาน
+        text: repairTicket.description, // ปฎิบัติงาน / อาการ
+        text89: `${googleFormData.name || repairTicket.user?.name || ""} ${googleFormData.phone || repairTicket.user?.phone || ""
+          }`, // ติดต่อชื่อ เบอร์
       };
 
       // Add images if available (support multiple Files columns)
       if (imageUrls.length > 0) {
         // Create formatted text with Google Drive links for Monday.com attachment
-        const imageText = attachmentUrls.map((url, index) =>
-          `รูปภาพ ${index + 1}: ${url}`
-        ).join("\n");
+        const imageText = attachmentUrls
+          .map((url, index) => `รูปภาพ ${index + 1}: ${url}`)
+          .join("\n");
 
         // Option 1: Use text-based approach (current method)
         const useTextBasedApproach = true; // Set to false to try file upload
@@ -134,25 +148,24 @@ export class MondayService {
           // Add instruction text for manual attachment
           const instructionText = `\n\n📋 วิธีแนบรูปภาพใน "รูป/วีดิโอประกอบ":\n1. คลิกที่ column "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive" หรือ "From Link"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง\n5. รูปภาพจะแสดงใน column "รูป/วีดิโอประกอบ"`;
 
-          // Add image links to description
-          const updatedDescription = `${repairTicket.description}\n\n📎 รูปภาพที่แนบ:\n${imageText}${instructionText}`;
-          columnValues["text"] = updatedDescription;
+          // Keep description clean - only device description
+          columnValues["text"] = repairTicket.description;
 
           // Add image links to dedicated text columns for easy access
           columnValues["text_images"] = imageText;
-          columnValues["text_image_links"] = attachmentUrls.join('\n');
+          columnValues["text_image_links"] = attachmentUrls.join("\n");
 
-          console.log("Added image links to description and text columns (Monday.com Files API doesn't support Google Drive URLs directly)");
+          console.log(
+            "Added image links to description and text columns (Monday.com Files API doesn't support Google Drive URLs directly)"
+          );
         } else {
           // Option 2: Try to upload files directly (experimental)
           console.log("Attempting to upload files directly to Monday.com...");
           // Note: This would require the ticket to be created first, then files uploaded
           // For now, we'll still use text-based approach as fallback
-          const instructionText = `\n\n📋 รูปภาพจะถูกแนบอัตโนมัติ (หรือใช้ลิงก์ด้านล่าง):\n${imageText}`;
-          const updatedDescription = `${repairTicket.description}\n\n📎 รูปภาพที่แนบ:\n${imageText}${instructionText}`;
-          columnValues["text"] = updatedDescription;
+          columnValues["text"] = repairTicket.description;
           columnValues["text_images"] = imageText;
-          columnValues["text_image_links"] = attachmentUrls.join('\n');
+          columnValues["text_image_links"] = attachmentUrls.join("\n");
         }
       }
 
@@ -173,7 +186,10 @@ export class MondayService {
         columnValues: columnValuesJson,
       });
 
-      console.log("Column values object:", JSON.stringify(columnValues, null, 2));
+      console.log(
+        "Column values object:",
+        JSON.stringify(columnValues, null, 2)
+      );
       console.log("Column values JSON:", columnValuesJson);
 
       const response = await axios.post(
@@ -203,7 +219,11 @@ export class MondayService {
         // Try to create ticket without images if there's an error
         if (imageUrls.length > 0) {
           console.log("Retrying without images due to API error...");
-          return await this.createTicketWithoutImages(repairTicket, googleFormData, deviceInfo);
+          return await this.createTicketWithoutImages(
+            repairTicket,
+            googleFormData,
+            deviceInfo
+          );
         }
 
         return null;
@@ -230,7 +250,11 @@ export class MondayService {
       if (imageUrls && imageUrls.length > 0) {
         console.log("Caught error, retrying without images...");
         try {
-          return await this.createTicketWithoutImages(repairTicket, googleFormData, deviceInfo);
+          return await this.createTicketWithoutImages(
+            repairTicket,
+            googleFormData,
+            deviceInfo
+          );
         } catch (retryError) {
           console.error("Error in retry without images:", retryError);
         }
@@ -260,9 +284,9 @@ export class MondayService {
       const columnImages = imageUrls.slice(startIndex, endIndex);
 
       if (columnImages.length > 0) {
-        distribution[columnId] = columnImages.map(url => ({
+        distribution[columnId] = columnImages.map((url) => ({
           url: url,
-          name: `รูปภาพจาก Google Drive`
+          name: `รูปภาพจาก Google Drive`,
         }));
       }
     });
@@ -295,27 +319,28 @@ export class MondayService {
 
       // Create FormData for multipart upload
       const formData = new FormData();
-      formData.append('file', fileBlob, fileName);
+      formData.append("file", fileBlob, fileName);
 
       // Upload to Monday.com
       const uploadResponse = await fetch(`${this.apiUrl}/file`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': this.apiToken,
+          Authorization: this.apiToken,
         },
         body: formData,
       });
 
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
-        console.error(`Monday.com file upload failed: ${uploadResponse.status} ${errorText}`);
+        console.error(
+          `Monday.com file upload failed: ${uploadResponse.status} ${errorText}`
+        );
         return false;
       }
 
       const uploadResult = await uploadResponse.json();
       console.log(`File uploaded successfully: ${uploadResult.data?.id}`);
       return true;
-
     } catch (error) {
       console.error("Error uploading file to Monday.com:", error);
       return false;
@@ -333,17 +358,26 @@ export class MondayService {
 
       // Prepare column values without images
       const columnValues = {
-        "name": deviceInfo,
-        "text_mkw33zz3": googleFormData.name || repairTicket.user?.name || "",
-        "text0": googleFormData.company || repairTicket.user?.email || "",
-        "text_mkw39nxa": googleFormData.phone || repairTicket.user?.phone || "",
-        "text_mkw1pwsa": googleFormData.department || repairTicket.user?.department || "",
-        "text_14": googleFormData.brand || repairTicket.device?.model?.brand?.name || "ไม่ระบุ",
-        "text_17": googleFormData.model || repairTicket.device?.model?.name || "ไม่ระบุ",
-        "text1": googleFormData.serialNumber || repairTicket.device?.serialNumber || "ไม่ระบุ",
-        "status": { label: this.mapStatusToMonday(repairTicket.status) },
-        "text": repairTicket.description,
-        "text89": `${googleFormData.name || repairTicket.user?.name || ""} ${googleFormData.phone || repairTicket.user?.phone || ""}`,
+        name: deviceInfo,
+        text_mkw33zz3: googleFormData.name || repairTicket.user?.name || "",
+        text0: googleFormData.company || repairTicket.user?.email || "",
+        text_mkw39nxa: googleFormData.phone || repairTicket.user?.phone || "",
+        text_mkw1pwsa:
+          googleFormData.department || repairTicket.user?.department || "",
+        text_14:
+          googleFormData.brand ||
+          repairTicket.device?.model?.brand?.name ||
+          "ไม่ระบุ",
+        text_17:
+          googleFormData.model || repairTicket.device?.model?.name || "ไม่ระบุ",
+        text1:
+          googleFormData.serialNumber ||
+          repairTicket.device?.serialNumber ||
+          "ไม่ระบุ",
+        status: { label: this.mapStatusToMonday(repairTicket.status) },
+        text: repairTicket.description,
+        text89: `${googleFormData.name || repairTicket.user?.name || ""} ${googleFormData.phone || repairTicket.user?.phone || ""
+          }`,
       };
 
       const columnValuesJson = JSON.stringify(columnValues);
@@ -535,7 +569,10 @@ export class MondayService {
         }
       );
 
-      console.log("Monday.com board columns:", JSON.stringify(response.data, null, 2));
+      console.log(
+        "Monday.com board columns:",
+        JSON.stringify(response.data, null, 2)
+      );
       return response.data;
     } catch (error) {
       console.error("Error getting Monday.com board columns:", error);
