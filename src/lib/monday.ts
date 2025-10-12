@@ -136,26 +136,20 @@ export class MondayService {
 
       // Add images if available (support multiple Files columns)
       if (imageUrls.length > 0) {
-        // Create formatted text with Google Drive links for Monday.com attachment
-        const imageText = attachmentUrls
-          .map((url, index) => `รูปภาพ ${index + 1}: ${url}`)
-          .join("\n");
+        // Process image URLs for Monday.com
 
         // Option 1: Use text-based approach (current method)
         const useTextBasedApproach = true; // Set to false to try file upload
 
         if (useTextBasedApproach) {
-          // Keep description clean - only device description with instruction text
-          const instructionText = `\n\n📋 วิธีแนบรูปภาพใน "รูป/วีดิโอประกอบ":\n1. คลิกที่ column "รูป/วีดิโอประกอบ" ใน Monday.com\n2. เลือก "From Google Drive" หรือ "From Link"\n3. ใช้ลิงก์ด้านบนเพื่อค้นหาไฟล์\n4. แนบไฟล์ที่เกี่ยวข้อง\n5. รูปภาพจะแสดงใน column "รูป/วีดิโอประกอบ"`;
+          // Keep description clean - only device description
+          columnValues["text"] = repairTicket.description;
 
-          columnValues["text"] = repairTicket.description + instructionText;
- 
-          // Add image links to dedicated text columns for easy access
-          columnValues["text_images"] = imageText;
-          columnValues["text_image_links"] = attachmentUrls.join("\n");
+          // Add image URLs directly to text_mkwgrdwx column
+          columnValues["text_mkwgrdwx"] = attachmentUrls.join('\n');
 
           console.log(
-            "Added image links to description and text columns (Monday.com Files API doesn't support Google Drive URLs directly)"
+            "Added image URLs to text_mkwgrdwx column (Monday.com Files API doesn't support Google Drive URLs directly)"
           );
         } else {
           // Option 2: Try to upload files directly (experimental)
@@ -163,8 +157,7 @@ export class MondayService {
           // Note: This would require the ticket to be created first, then files uploaded
           // For now, we'll still use text-based approach as fallback
           columnValues["text"] = repairTicket.description;
-          columnValues["text_images"] = imageText;
-          columnValues["text_image_links"] = attachmentUrls.join("\n");
+          columnValues["text_mkwgrdwx"] = attachmentUrls.join('\n'); // Direct URLs only
         }
       }
 
